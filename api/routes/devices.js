@@ -14,7 +14,7 @@ router.get('/', (req, res, next) => {
   else if (req.body.accountId)
     query = { accountId: req.body.accountId };
   else
-    return res.status(400).json({ err: "No query" });
+    return res.status(400).json({ err: "No filter" });
 
   Device.find(query)
     .select('-__v')
@@ -30,11 +30,10 @@ router.get('/', (req, res, next) => {
 });
 
 //get device
-//todo - change find logic to use serial number
-router.get('/:deviceId', (req, res, next) => {
-  Device.findById(req.params.deviceId)
-    .then(result => {
-      res.status(200).json({ device: result });
+router.get('/:serialNumber', (req, res, next) => {
+  Device.find({ serialNumber: req.params.serialNumber })
+    .then(device => {
+      res.status(200).json({ device });
     })
     .catch(err => {
       res.status(500).json({ err });
@@ -42,7 +41,6 @@ router.get('/:deviceId', (req, res, next) => {
 });
 
 //POST route
-//todo - update status codes
 router.post('/', (req, res, next) => {
   Device.find({ appId: req.body.appId, pushId: req.body.pushId })
     .exec()
@@ -53,6 +51,7 @@ router.post('/', (req, res, next) => {
         });
       } else {
         const device = new Device({
+          serialNumber: req.body.serialNumber,
           accountId: req.body.accountId,
           osPlatform: req.body.osPlatform,
           osVersion: req.body.osVersion,
@@ -68,7 +67,7 @@ router.post('/', (req, res, next) => {
               result
             });
           })
-          .catch(err => { res.status(500).json({ err: "save err" }) });
+          .catch(err => { res.status(500).json({ err }) });
         //subscript device to app
         subscribeToTopic(device, device.appId);
       }
@@ -112,17 +111,16 @@ router.delete('/:deviceId', (req, res, next) => {
 });
 
 //for sending notification to all devices
-function subscribeToTopic(device, topic) {
-  const url = `https://iid.googleapis.com/iid/v1/${device.token}/rel/topics/${topic}`;
-  const app = App.find({ appId: device.appId, osPlatform: device.osPlatform })
+async function subscribeToTopic(device, topic) {
+  const url = `https://iid.googleapis.com/iid/v1/${device.pushId}/rel/topics/${topic}`;
+  const serverKey = await App.find({ appId: device.appId, osPlatform: device.osPlatform })
     .exec()
-    .then(result => result)
+    .then(result => result[0].FCMServerKey)
     .catch(err => { console.log(err) });
   fetch(url, {
     headers: {
       'Content-Type': 'application/json',
-      'Content-Length': '0',
-      'Authorization': `key=${FCM_SERVER_KEY}`
+      'Authorization': `key=${serverKey}`
     },
     method: 'POST'
   })
