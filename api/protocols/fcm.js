@@ -1,10 +1,65 @@
-
 const App = require('../models/App');
+const Log = require('../models/Log');
 const fetch = require('node-fetch');
 const FCM_LEGACY_URL = 'https://fcm.googleapis.com/fcm/send';
 const { google } = require('googleapis');
 
-const send = async function (payload, devices, app) {
+const sendTopic = async function (payload, topic, app, trx) {
+  // setup
+  // get app info
+  const [projectURL, authKey] = await App.findById(app)
+    .then(app => {
+      return [`https://fcm.googleapis.com/v1/projects/${app.FCMProjectId}/messages:send`, getAccessToken(app.FCMClientEmail, app.FCMPrivateKey)];
+    })
+    .catch(err => { console.log(err) });
+  // configure notification
+  if (!payload.data)
+    payload.data = {};
+  let notification = {
+    message: {
+      android: {
+        notification: {
+          title: payload.title,
+          body: payload.message,
+          click_action: "OPEN_ACTIVITY_1",
+          sound: "default"
+        }
+      },
+      topic: topic,
+      data: payload.data
+    }
+  };
+  let promise = new Promise((resolve, reject) => {
+    fetch(projectURL, {
+      body: JSON.stringify(notification),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + authKey
+      },
+      method: 'POST'
+    })
+      .then(result => {
+        const status = result.headers.status;
+        return result.json();
+      })
+      .then(data => {
+        let sent;
+        status !== 200 ? sent = false : sent = true;
+        const log = new Log({
+          transactionId: trx,
+          sendFlag: sent,
+          responseFlag: sent,
+          status: status,
+          result: data,
+        }).save();
+        resolve(data);
+      })
+      .catch(err => reject(err));
+  });
+
+}
+
+const send = async function (payload, devices, app, trx) {
   // setup
   // get app info
   const [projectURL, authKey] = await App.findById(app)
@@ -32,6 +87,7 @@ const send = async function (payload, devices, app) {
       data: payload.data
     }
   };
+
   // send messages
   //todo - handle send failure exception. try resend
   const promises = [];
@@ -48,10 +104,21 @@ const send = async function (payload, devices, app) {
         method: 'POST'
       })
         .then(result => {
+          const status = result.headers.status;
           return result.json();
-          //save log
         })
-        .then(data => resolve(data))
+        .then(data => {
+          let sent;
+          status !== 200 ? sent = false : sent = true;
+          const log = new Log({
+            transactionId: trx,
+            sendFlag: sent,
+            responseFlag: sent,
+            status: status,
+            result: data,
+          }).save();
+          resolve(data);
+        })
         .catch(err => reject(err));
     });
     promises.push(promise);
@@ -123,4 +190,16 @@ function getAccessToken(email, key) {
   });
 }
 
-module.exports = { send };
+function saveTransaction(data) {
+  const transaction = new Transaction({
+    appId: data.appId,
+    osPlatform: data.osPlatform,
+    accountId: data.accountId,
+    deviceId: data.deviceId,
+    pushId: data.pushId,
+    title: data.notificationTitle,
+    message: data.notificationMessage
+  }).save().then(result => result).catch(err => err);
+}
+
+module.exports = { send, sendTopic };
