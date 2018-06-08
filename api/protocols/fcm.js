@@ -69,8 +69,6 @@ const send = async function (payload, devices, app, trx) {
     .catch(err => { console.log(err) });
 
   // construct notification payload
-  //todo - add data option
-  //todo - change payload for topic 
   if (!payload.data)
     payload.data = {};
   let notification = {
