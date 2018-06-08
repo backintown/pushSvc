@@ -188,16 +188,4 @@ function getAccessToken(email, key) {
   });
 }
 
-function saveTransaction(data) {
-  const transaction = new Transaction({
-    appId: data.appId,
-    osPlatform: data.osPlatform,
-    accountId: data.accountId,
-    deviceId: data.deviceId,
-    pushId: data.pushId,
-    title: data.notificationTitle,
-    message: data.notificationMessage
-  }).save().then(result => result).catch(err => err);
-}
-
 module.exports = { send, sendTopic };
