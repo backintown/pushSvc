@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const logSchema = mongoose.Schema({
 
   transactionId: { type: String, required: true },
+  deviceId: { type: String },
+  pushId: { type: String },
   sendFlag: { type: Boolean },
   responseFlag: { type: Boolean },
   sendOn: { type: Date, default: Date.now },
