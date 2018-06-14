@@ -3,6 +3,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const multer = require('multer');
 const fs = require('fs');
+const mv = require('mv');
 const App = require('../models/App');
 // storage
 const storage = multer.diskStorage({
@@ -10,7 +11,7 @@ const storage = multer.diskStorage({
     cb(null, 'temp');
   },
   filename: (req, file, cb) => {
-    cb(null, `${new Date().toISOString()}${file.originalname}`);
+    cb(null, `${new Date().toISOString()}_${file.originalname}`);
   }
 });
 const upload = multer({
@@ -35,32 +36,44 @@ router.get('/', (req, res, next) => {
 });
 
 //POST route
-router.post('/', upload.fields([{ name: 'FCMjson', maxCount: 1 }, { name: 'iOSCert', maxCount: 1 }, { name: 'iOSKey', maxCount: 1 }]), (req, res, next) => {
-  for (var file in req.files) {
-    console.log(req.files[file]);
-  }
+router.post('/', upload.fields([{ name: 'iOSCert', maxCount: 1 }, { name: 'iOSKey', maxCount: 1 }]), (req, res, next) => {
 
   App.find({ appId: req.body.appId, osPlatform: req.body.osPlatform })
     .exec()
     .then(result => {
       if (result.length > 0) {
+        // remove temp files
+        if (req.files) {
+          for (let file in req.files) {
+            fs.unlink(req.files[file][0].path, err => {
+              if (err)
+                console.log(err);
+            });
+          }
+        }
         return res.status(409).json({
           message: 'app exists'
         });
       } else {
+        // move files
+        const [certPath, keyPath] = moveiOSFiles(req.files);
+        // create app
         const app = new App({
           organizationId: req.body.organizationId,
           name: req.body.name,
           appId: req.body.appId,
           osPlatform: req.body.osPlatform,
+          FCMPrivateKey: req.body.FCMPrivateKey,
+          FCMClientEmail: req.body.FCMClientEmail,
           FCMServerKey: req.body.FCMServerKey,
-          FCMSenderId: req.body.FCMSenderId,
-          iOSCertURL: req.body.iOSCertURL,
-          iOSPassword: req.body.iOSPassword,
+          FCMProjectID: req.body.projectId,
+          iOSCert: certPath,
+          iOSKey: keyPath,
           supportBy: req.body.supportBy,
           supportNumber: req.body.supportNumber,
           supportEmail: req.body.supportEmail
         })
+
         app.save()
           .then(result => {
             res.status(201).json({
@@ -72,15 +85,32 @@ router.post('/', upload.fields([{ name: 'FCMjson', maxCount: 1 }, { name: 'iOSCe
       }
     })
     .catch(err => {
-      res.status(500).json({ err: "hello" })
+      res.status(500).json({ err })
     });
 
 });
 
 //update
-// todo - fix update items (status, osplatform, etc)
-router.put('/:appId', (req, res, next) => {
-  App.update({ _id: req.params.appId }, req.body, (err, result) => {
+router.put('/', upload.fields([{ name: 'iOSCert', maxCount: 1 }, { name: 'iOSKey', maxCount: 1 }]), (req, res, next) => {
+
+  // move files and set updated paths in req.body
+  [req.body.iOSCert, req.body.iOSKey] = moveiOSFiles(req.files);
+  req.body.status = null; // status should not be updated externally
+  req.body.modifiedOn = Date.now(); // insert date into request object for modifiedOn
+  App.findOneAndUpdate({ appId: req.body.appId, osPlatform: req.body.osPlatform }, req.body, (err, result) => {
+    // result is the original record
+    // remove old files
+    console.log(result)
+    if (req.body.iOSCert)
+      fs.unlink(result.iOSCert, err => {
+        if (err)
+          console.log(err);
+      });
+    if (req.body.iOSKey)
+      fs.unlink(result.iOSKey, err => {
+        if (err)
+          console.log(err);
+      });
     if (err)
       res.json({ err });
     res.json({ result });
@@ -103,4 +133,26 @@ router.delete('/:appId', (req, res, next) => {
     });
 });
 
+function moveiOSFiles(files) {
+  // move files
+  let certPath, keyPath;
+  if (files['iOSCert']) {
+    const certFile = files['iOSCert'][0];
+    certPath = `upload/iOSCert/${certFile.filename}`;
+    mv(certFile.path, certPath, err => {
+      if (err)
+        res.status(500).json({ err: 'error with file upload, please try again later' });
+    });
+  }
+
+  if (files['iOSKey']) {
+    const keyFile = files['iOSKey'][0];
+    keyPath = `upload/iOSKey/${keyFile.filename}`
+    mv(keyFile.path, keyPath, err => {
+      if (err)
+        res.status(500).json({ err: 'error with file upload, please try again later' });
+    });
+  }
+  return [certPath, keyPath];
+}
 module.exports = router;
