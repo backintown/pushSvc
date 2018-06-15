@@ -17,7 +17,7 @@ const authCheck = function (req, res, next) {
     })
       .then(response => {
         if (response.status === 200)
-          next()
+          next();
         else
           res.status(401).json({ error: 'Not authorized' });
       })
