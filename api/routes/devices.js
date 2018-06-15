@@ -133,7 +133,6 @@ async function subscribeToTopic(device, topic) {
           method: 'POST'
         })
           .then(response => {
-            // delete device if invalid token
             if (response.status === 400) {
               reject('Invalid FCM token');
             }

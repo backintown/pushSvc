@@ -90,14 +90,14 @@ I used Postman for testing. Feel free to use CURL or other methods.
 
 ### Register an app
 
-- ![Android](https://imgur.com/fi6ZiJV)
+- [Android](https://imgur.com/fi6ZiJV)
 
-- ![iOS](https://imgur.com/RWROVhN)
+- [iOS](https://imgur.com/RWROVhN)
 
 ### Register a device
 
-- ![iOS](https://imgur.com/SAOV01j)
+- [iOS](https://imgur.com/SAOV01j)
 
 ### Send notification
 
-- ![device (Android)](https://imgur.com/SPLlzUK)
+- [device (Android)](https://imgur.com/SPLlzUK)
