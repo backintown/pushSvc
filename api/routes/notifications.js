@@ -177,6 +177,12 @@ router.get('/logs/:transactionId', (req, res, next) => {
     .catch(err => res.status(500).json({ err }));
 });
 
+router.put('/logs', (req, res, next) => {
+  Log.findOneAndUpdate({ _id: req.body.logId }, { $set: { responseFlag: true, responseOn: Date.now() } }, (err, doc) => {
+    if (err)
+      console.log(err);
+  })
+})
 
 async function saveTransaction(data) {
   const transaction = await new Transaction({
