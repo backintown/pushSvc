@@ -146,7 +146,7 @@ function moveFiles(files) {
   if (files['iOSCert']) {
     const certFile = files['iOSCert'][0];
     certPath = `upload/iOSCert/${certFile.filename}`;
-    mv(certFile.path, certPath, err => {
+    mv(certFile.path, certPath, { mkdirp: true }, err => {
       if (err)
         res.status(500).json({ err: 'error with file upload, please try again later' });
     });
@@ -155,7 +155,7 @@ function moveFiles(files) {
   if (files['iOSKey']) {
     const keyFile = files['iOSKey'][0];
     keyPath = `upload/iOSKey/${keyFile.filename}`
-    mv(keyFile.path, keyPath, err => {
+    mv(keyFile.path, keyPath, { mkdirp: true }, err => {
       if (err)
         res.status(500).json({ err: 'error with file upload, please try again later' });
     });
@@ -164,7 +164,7 @@ function moveFiles(files) {
   if (files['FCMjson']) {
     const json = files['FCMjson'][0];
     fcmPath = `upload/FCMJSON/${json.filename}`
-    mv(json.path, fcmPath, err => {
+    mv(json.path, fcmPath, { mkdirp: true }, err => {
       if (err)
         res.status(500).json({ err: 'error with file upload, please try again later' });
     });
