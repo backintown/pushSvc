@@ -60,20 +60,24 @@ router.post('/', (req, res, next) => {
           appId: req.body.appId,
           pushId: req.body.pushId
         });
-        device.save()
+        subscribeToTopic(device, device.appId)
           .then(result => {
-            res.status(201).json({
-              message: 'device saved',
-              result
-            });
+            device.save()
+              .then(result => {
+                res.status(201).json({
+                  message: 'device saved',
+                  result
+                });
+              })
+              .catch(err => { res.status(500).json({ err }) });
           })
-          .catch(err => { res.status(500).json({ err }) });
-        //subscript device to app
-        subscribeToTopic(device, device.appId);
+          .catch(err => {
+            res.status(400).json({ err });
+          })
       }
     })
     .catch(err => {
-      res.status(500).json({ err: err })
+      res.status(500).json({ err })
     });
 })
 
@@ -114,27 +118,30 @@ router.delete('/:deviceId', (req, res, next) => {
 //for sending notification to all devices
 async function subscribeToTopic(device, topic) {
   // set app info
-  const url = `https://iid.googleapis.com/iid/v1/${device.pushId}/rel/topics/${topic}`;
-  const serverKey = await App.find({ appId: device.appId, osPlatform: device.osPlatform })
-    .exec()
-    .then(result => result[0].FCMServerKey)
-    .catch(err => { console.log(err) });
+  return new Promise((resolve, reject) => {
+    const url = `https://iid.googleapis.com/iid/v1/${device.pushId}/rel/topics/${topic}`;
 
-  // subscribe  
-  fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `key=${serverKey}`
-    },
-    method: 'POST'
+    App.find({ appId: device.appId, osPlatform: device.osPlatform })
+      .exec()
+      .then(result => {
+        const serverKey = result[0].FCMServerKey;
+        fetch(url, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `key=${serverKey}`
+          },
+          method: 'POST'
+        })
+          .then(response => {
+            // delete device if invalid token
+            if (response.status === 400) {
+              reject('Invalid FCM token');
+            }
+            resolve(response);
+          })
+          .catch(err => console.log(err));
+      })
+      .catch(err => { console.log(err) });
   })
-    .then(response => {
-      // delete device if invalid token
-      if (response.error === "InvalidToken") {
-        Device.deleteOne(device._id);
-        res.status(400).json({ err: 'Invalid FCM Token' });
-      }
-    })
-    .catch(err => console.log(err));
 }
 module.exports = router;
