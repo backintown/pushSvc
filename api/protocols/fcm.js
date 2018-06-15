@@ -110,7 +110,6 @@ const send = async function (payload, devices, appUID, trx) {
           deviceId: device.serialNumber,
           pushId: device.pushId,
           sendFlag: true,
-          responseFlag: true,
           status: 200,
           result: JSON.stringify(data)
         }).save();
@@ -121,7 +120,6 @@ const send = async function (payload, devices, appUID, trx) {
           deviceId: device.serialNumber,
           pushId: device.pushId,
           sendFlag: false,
-          responseFlag: false,
           status: err.status,
           result: err.error,
         }).save()
