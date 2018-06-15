@@ -75,7 +75,7 @@ Send push notifications to Android and iOS apps using Firebase Cloud Messaging a
  
 ### NOTIFICATIONS - /apis/v1/pushService/notification
 
-- GET (/logs) - returns logs (requires transactionId)
+- GET (/logs/:transactionId) - returns logs (requires transactionId)
 
 - POST (/app) - sends notification to all devices (requires osPlatform, appId). returns transactionId.
 
@@ -101,3 +101,5 @@ I used Postman for testing. Feel free to use CURL or other methods.
 ### Send notification
 
 - [device (Android)](https://imgur.com/SPLlzUK)
+
+- [get logs](https://imgur.com/OR7ZI3X)

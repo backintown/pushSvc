@@ -166,8 +166,8 @@ router.post('/list', (req, res, next) => {
     });
 });
 
-router.get('/logs', (req, res, next) => {
-  Log.find({ transactionId: req.body.transactionId })
+router.get('/logs/:transactionId', (req, res, next) => {
+  Log.find({ transactionId: req.params.transactionId })
     .exec()
     .then(logs => {
       if (logs.length < 1)
