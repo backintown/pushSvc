@@ -10,7 +10,7 @@ const logSchema = mongoose.Schema({
   sendOn: { type: Date, default: Date.now },
   responseOn: { type: Date, default: Date.now },
   status: { type: Number },
-  result: { type: String },
+  result: { type: Object },
   createdOn: { type: Date, default: Date.now },
   modifiedOn: { type: Date, default: Date.now }
 

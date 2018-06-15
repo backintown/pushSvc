@@ -36,7 +36,7 @@ router.get('/', (req, res, next) => {
 });
 
 //POST route
-router.post('/', upload.fields([{ name: 'iOSCert', maxCount: 1 }, { name: 'iOSKey', maxCount: 1 }]), (req, res, next) => {
+router.post('/', upload.fields([{ name: 'iOSCert', maxCount: 1 }, { name: 'iOSKey', maxCount: 1 }, { name: 'FCMjson', maxCount: 1 }]), (req, res, next) => {
 
   App.find({ appId: req.body.appId, osPlatform: req.body.osPlatform })
     .exec()
@@ -56,17 +56,18 @@ router.post('/', upload.fields([{ name: 'iOSCert', maxCount: 1 }, { name: 'iOSKe
         });
       } else {
         // move files
-        const [certPath, keyPath] = moveiOSFiles(req.files);
+        const [certPath, keyPath, fcmPath] = moveFiles(req.files);
         // create app
         const app = new App({
           organizationId: req.body.organizationId,
           name: req.body.name,
           appId: req.body.appId,
           osPlatform: req.body.osPlatform,
+          FCMjson: fcmPath,
           FCMPrivateKey: req.body.FCMPrivateKey,
           FCMClientEmail: req.body.FCMClientEmail,
           FCMServerKey: req.body.FCMServerKey,
-          FCMProjectID: req.body.projectId,
+          FCMProjectId: req.body.FCMProjectId,
           iOSCert: certPath,
           iOSKey: keyPath,
           supportBy: req.body.supportBy,
@@ -91,10 +92,11 @@ router.post('/', upload.fields([{ name: 'iOSCert', maxCount: 1 }, { name: 'iOSKe
 });
 
 //update
-router.put('/', upload.fields([{ name: 'iOSCert', maxCount: 1 }, { name: 'iOSKey', maxCount: 1 }]), (req, res, next) => {
+router.put('/', upload.fields([{ name: 'iOSCert', maxCount: 1 }, { name: 'iOSKey', maxCount: 1 }, { name: 'FCMjson', maxCount: 1 }]), (req, res, next) => {
 
   // move files and set updated paths in req.body
-  [req.body.iOSCert, req.body.iOSKey] = moveiOSFiles(req.files);
+  [req.body.iOSCert, req.body.iOSKey, req.body.FCMjson] = moveFiles(req.files);
+
   req.body.status = null; // status should not be updated externally
   req.body.modifiedOn = Date.now(); // insert date into request object for modifiedOn
   App.findOneAndUpdate({ appId: req.body.appId, osPlatform: req.body.osPlatform }, req.body, (err, result) => {
@@ -111,6 +113,11 @@ router.put('/', upload.fields([{ name: 'iOSCert', maxCount: 1 }, { name: 'iOSKey
         if (err)
           console.log(err);
       });
+    if (req.body.FCMjson)
+      fs.unlink(result.FCMjson, err => {
+        if (err)
+          console.log(err);
+      })
     if (err)
       res.json({ err });
     res.json({ result });
@@ -120,10 +127,10 @@ router.put('/', upload.fields([{ name: 'iOSCert', maxCount: 1 }, { name: 'iOSKey
 //delete app route
 //change to update status instead of delete
 router.delete('/:appId', (req, res, next) => {
-  App.find({ _id: req.params.appId })
+  App.find({ appId: req.params.appId, osPlatform: req.body.osPlatform })
     .exec()
     .then(result => {
-      App.remove({ _id: req.params.appId })
+      App.remove({ _id: result[0]._id })
       res.status(200).json({
         message: `${result[0].name} removed`
       });
@@ -133,9 +140,9 @@ router.delete('/:appId', (req, res, next) => {
     });
 });
 
-function moveiOSFiles(files) {
+function moveFiles(files) {
   // move files
-  let certPath, keyPath;
+  let certPath, keyPath, fcmPath;
   if (files['iOSCert']) {
     const certFile = files['iOSCert'][0];
     certPath = `upload/iOSCert/${certFile.filename}`;
@@ -153,6 +160,15 @@ function moveiOSFiles(files) {
         res.status(500).json({ err: 'error with file upload, please try again later' });
     });
   }
-  return [certPath, keyPath];
+
+  if (files['FCMjson']) {
+    const json = files['FCMjson'][0];
+    fcmPath = `upload/FCMJSON/${json.filename}`
+    mv(json.path, fcmPath, err => {
+      if (err)
+        res.status(500).json({ err: 'error with file upload, please try again later' });
+    });
+  }
+  return [certPath, keyPath, fcmPath];
 }
 module.exports = router;

@@ -3,6 +3,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const fetch = require('node-fetch');
 const Device = require('../models/Device');
+const App = require('../models/App');
 
 //get all devices
 //todo - add filter
@@ -57,7 +58,6 @@ router.post('/', (req, res, next) => {
           osVersion: req.body.osVersion,
           appVersion: req.body.appVersion,
           appId: req.body.appId,
-          accountId: req.body.accountId,
           pushId: req.body.pushId
         });
         device.save()
@@ -77,9 +77,10 @@ router.post('/', (req, res, next) => {
     });
 })
 
-//todo - fix fields
-router.put('/:deviceId', (req, res, next) => {
-  App.update({ _id: req.params.deviceId }, req.body, { $set: { modifiedOn: Date.now() } }, (err, result) => {
+
+router.put('/:serialNumber', (req, res, next) => {
+  req.body.modifiedOn = Date.now();
+  Device.findOneAndUpdate({ serialNumber: req.params.serialNumber }, req.body, (err, result) => {
     if (err)
       res.json({ err });
     res.json({ result });
@@ -112,11 +113,14 @@ router.delete('/:deviceId', (req, res, next) => {
 
 //for sending notification to all devices
 async function subscribeToTopic(device, topic) {
+  // set app info
   const url = `https://iid.googleapis.com/iid/v1/${device.pushId}/rel/topics/${topic}`;
   const serverKey = await App.find({ appId: device.appId, osPlatform: device.osPlatform })
     .exec()
     .then(result => result[0].FCMServerKey)
     .catch(err => { console.log(err) });
+
+  // subscribe  
   fetch(url, {
     headers: {
       'Content-Type': 'application/json',
@@ -124,5 +128,13 @@ async function subscribeToTopic(device, topic) {
     },
     method: 'POST'
   })
+    .then(response => {
+      // delete device if invalid token
+      if (response.error === "InvalidToken") {
+        Device.deleteOne(device._id);
+        res.status(400).json({ err: 'Invalid FCM Token' });
+      }
+    })
+    .catch(err => console.log(err));
 }
 module.exports = router;

@@ -4,15 +4,16 @@ const appSchema = mongoose.Schema({
 
   organizationId: { type: String },
   name: { type: String },
-  appId: { type: String, required: true },
+  appId: { type: String, required: true }, // e.g. com.test.android
   osPlatform: { type: String, required: true },
   FCMjson: { type: String },
-  FCMServerKey: { type: String },
-  FCMProjectId: { type: String },
-  FCMSenderId: { type: String },
-  iOSCertURL: { type: String },
-  iOSPassword: { type: String },
-  status: { type: Number },
+  // FCMPrivateKey: { type: String }, // for getting fcm auth
+  // FCMClientEmail: { type: String }, // for getting fcm auth
+  FCMServerKey: { type: String }, // for subscribing to topics
+  FCMProjectId: { type: String }, // for fcm project url
+  iOSCert: { type: String }, // path to file in local storage
+  iOSKey: { type: String },
+  status: { type: Number }, // {1, 0 - inactive}
   supportBy: { type: String },
   supportNumber: { type: String },
   supportEmail: { type: String },
