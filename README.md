@@ -103,3 +103,22 @@ I used Postman for testing. Feel free to use CURL or other methods.
 - [device (Android)](https://imgur.com/SPLlzUK)
 
 - [get logs](https://imgur.com/OR7ZI3X)
+
+## TODOS
+
+### Documentation
+
+- Write docs
+    - Create program flow chart
+### Functionality
+
+- Notifications
+    - Scheduled delivery
+- Logs
+    - Include broadcast flag
+    - Create update route
+
+### Deployment
+
+- Dockerize server
+- Deploy to AWS
