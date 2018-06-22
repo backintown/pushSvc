@@ -18,6 +18,11 @@ app.use('/apis/v1/pushService/apps', appsRoutes);
 app.use('/apis/v1/pushService/devices', devicesRoutes);
 app.use('/apis/v1/pushService/notification', notificationRoutes);
 getAccessToken().then(token => console.log(token));
+
+app.get('/', (res, req, next) => {
+  res.send('Hello world');
+});
+
 app.listen(3000, () => {
   console.log('server start');
 })
