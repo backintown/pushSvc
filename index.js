@@ -19,7 +19,7 @@ app.use('/apis/v1/pushService/devices', devicesRoutes);
 app.use('/apis/v1/pushService/notification', notificationRoutes);
 getAccessToken().then(token => console.log(token));
 
-app.get('/', (res, req, next) => {
+app.get('/', (req, res, next) => {
   res.send('Hello world');
 });
 
