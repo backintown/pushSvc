@@ -50,6 +50,8 @@ router.post('/account', (req, res, next) => {
 
 // send to all 
 router.post('/app', (req, res, next) => {
+  if (!req.body.notification)
+    return res.status(400).json({ err: "No notification" });
   if (!req.body.appId || !req.body.osPlatform)
     return res.status(400).json({ err: "Missing params" });
 
@@ -88,6 +90,9 @@ router.post('/app', (req, res, next) => {
 
 // send to device
 router.post('/device', (req, res, next) => {
+  if (!req.body.notification)
+    return res.status(400).json({ err: "No notification" });
+
   Device.find({ serialNumber: req.body.serialNumber })
     .exec()
     .then(devices => {
@@ -98,7 +103,7 @@ router.post('/device', (req, res, next) => {
       }
 
       // get app uid
-      const appUID = App.find({ appId: req.body.appId, osPlatform: devices[0].osPlatform })
+      const appUID = App.find({ appId: devices[0].appId, osPlatform: devices[0].osPlatform })
         .exec()
         .then(result => {
           const appUID = result[0]._id;
