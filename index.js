@@ -30,7 +30,7 @@ app.listen(3000, () => {
 function getAccessToken() {
   const SCOPES = ['https://www.googleapis.com/auth/firebase.messaging']
   return new Promise(function (resolve, reject) {
-    var key = require('./mytest.json');
+    // var key = require('./mytest.json');
     var jwtClient = new google.auth.JWT(
       "firebase-adminsdk-iau8p@mytest-cc974.iam.gserviceaccount.com",
       null,
