@@ -142,7 +142,7 @@ router.delete('/:appId', (req, res, next) => {
 
 function moveFiles(files) {
   // move files
-  let certPath, keyPath, fcmPath;
+  let certPath = null, keyPath = null, fcmPath = null;
   if (files['iOSCert']) {
     const certFile = files['iOSCert'][0];
     certPath = `upload/iOSCert/${certFile.filename}`;

@@ -79,7 +79,7 @@ Send push notifications to Android and iOS apps using Firebase Cloud Messaging a
 
 - POST (/app) - sends notification to all devices (requires osPlatform, appId). returns transactionId.
 
-- POST (/device) - sends notification to one device (requires device serialNumber). returns transactionId.
+- POST (/device) - sends notification to one device (requires device serialNumber, appId, osPlatform). returns transactionId.
 
 - POST (/account) - sends notification to one account (multiple devices) (requires appId, accountId, osPlatform). returns transactionId.
 

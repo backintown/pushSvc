@@ -10,6 +10,8 @@ const fetch = require('node-fetch');
 
 // send to user
 router.post('/account', (req, res, next) => {
+  if (!req.body.notification)
+    return res.status(400).json({ err: "No notification" });
   if (!req.body.accountId || !req.body.appId || !req.body.osPlatform)
     return res.status(400).json({ err: "Missing params" });
 
