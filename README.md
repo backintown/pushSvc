@@ -110,15 +110,14 @@ I used Postman for testing. Feel free to use CURL or other methods.
 
 - Write docs
     - Create program flow chart
+    
 ### Functionality
 
 - Notifications
     - Scheduled delivery
 - Logs
     - Include broadcast flag
-    - Create update route
 
 ### Deployment
 
 - Dockerize server
-- Deploy to AWS
