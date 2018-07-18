@@ -116,6 +116,7 @@ I used Postman for testing. Feel free to use CURL or other methods.
 
 - Write docs
     - Create program flow chart
+    
 ### Functionality
 
 - Notifications
@@ -123,6 +124,7 @@ I used Postman for testing. Feel free to use CURL or other methods.
 - Logs
     - Include broadcast flag [x]
     - Create update route [x]
+    - Include broadcast flag
 
 ### Deployment
 
