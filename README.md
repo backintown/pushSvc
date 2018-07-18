@@ -122,11 +122,10 @@ I used Postman for testing. Feel free to use CURL or other methods.
 - Notifications
     - Scheduled delivery
 - Logs
-    - Include broadcast flag [x]
-    - Create update route [x]
-    - Include broadcast flag
+    - [x] Include broadcast flag
+    - [x] Create update route 
 
 ### Deployment
 
 - Dockerize server
-- Deploy to AWS [x]
+- [x] Deploy to AWS 
