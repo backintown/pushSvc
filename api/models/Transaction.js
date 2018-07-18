@@ -10,7 +10,7 @@ const transactionSchema = mongoose.Schema({
   expiredOn: { type: Date },
   createdOn: { type: Date, default: Date.now }
 
-});
+}, { versionKey: false });
 
 transactionSchema.index({ appId: 1 })
 module.exports = mongoose.model('Transaction', transactionSchema);

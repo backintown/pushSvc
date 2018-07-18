@@ -14,7 +14,7 @@ const logSchema = mongoose.Schema({
   createdOn: { type: Date, default: Date.now },
   modifiedOn: { type: Date, default: Date.now }
 
-});
+}, { versionKey: false });
 
 logSchema.index({ transactionId: 1 });
 module.exports = mongoose.model('Log', logSchema);

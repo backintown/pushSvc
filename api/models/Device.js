@@ -8,10 +8,10 @@ const deviceSchema = mongoose.Schema({
   appId: { type: String, required: true }, // e.g. com.test.android
   appVersion: { type: String },
   pushId: { type: String, required: true, unique: true },
-  status: { type: Number },
+  status: { type: Number, default: 1 },
   createdOn: { type: Date, default: Date.now },
   modifiedOn: { type: Date, default: Date.now }
 
-});
+}, { versionKey: false });
 deviceSchema.index({ appId: 1, pushId: 1, accountId: 1 });
 module.exports = mongoose.model('Device', deviceSchema);

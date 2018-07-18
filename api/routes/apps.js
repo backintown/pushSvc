@@ -5,6 +5,7 @@ const multer = require('multer');
 const fs = require('fs');
 const mv = require('mv');
 const App = require('../models/App');
+const Device = require("../models/Device");
 // storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -28,6 +29,15 @@ router.get('/', (req, res, next) => {
     .then(results => {
       res.status(200).json({
         apps: results.map(result => {
+          result = result.toObject();
+          if (result.osPlatform === 'iOS') {
+            delete result.FCMjson;
+            delete result.FCMServerKey;
+            delete result.FCMProjectId;
+          } else {
+            delete result.iOSKey;
+            delete result.iOSCert;
+          }
           return result
         })
       });
@@ -77,6 +87,15 @@ router.post('/', upload.fields([{ name: 'iOSCert', maxCount: 1 }, { name: 'iOSKe
 
         app.save()
           .then(result => {
+            result = result.toObject();
+            if (result.osPlatform === 'iOS') {
+              delete result.FCMjson;
+              delete result.FCMServerKey;
+              delete result.FCMProjectId;
+            } else {
+              delete result.iOSKey;
+              delete result.iOSCert;
+            }
             res.status(201).json({
               message: 'app saved',
               result
@@ -92,14 +111,14 @@ router.post('/', upload.fields([{ name: 'iOSCert', maxCount: 1 }, { name: 'iOSKe
 });
 
 //update
-router.put('/', upload.fields([{ name: 'iOSCert', maxCount: 1 }, { name: 'iOSKey', maxCount: 1 }, { name: 'FCMjson', maxCount: 1 }]), (req, res, next) => {
+router.put('/:appId/:osPlatform', upload.fields([{ name: 'iOSCert', maxCount: 1 }, { name: 'iOSKey', maxCount: 1 }, { name: 'FCMjson', maxCount: 1 }]), (req, res, next) => {
 
   // move files and set updated paths in req.body
   [req.body.iOSCert, req.body.iOSKey, req.body.FCMjson] = moveFiles(req.files);
 
   req.body.status = null; // status should not be updated externally
   req.body.modifiedOn = Date.now(); // insert date into request object for modifiedOn
-  App.findOneAndUpdate({ appId: req.body.appId, osPlatform: req.body.osPlatform }, req.body, (err, result) => {
+  App.findOneAndUpdate({ appId: req.params.appId, osPlatform: req.params.osPlatform }, req.body, (err, result) => {
     // result is the original record
     // remove old files
     console.log(result)
@@ -126,17 +145,72 @@ router.put('/', upload.fields([{ name: 'iOSCert', maxCount: 1 }, { name: 'iOSKey
 
 //delete app route
 //change to update status instead of delete
-router.delete('/:appId', (req, res, next) => {
-  App.find({ appId: req.params.appId, osPlatform: req.body.osPlatform })
+router.delete('/:appId/:osPlatform', (req, res, next) => {
+  App.find({ appId: req.params.appId, osPlatform: req.params.osPlatform })
     .exec()
     .then(result => {
-      App.remove({ _id: result[0]._id })
-      res.status(200).json({
-        message: `${result[0].name} removed`
-      });
+      if (result.length < 1)
+        return res.status(404).json({ err: "app not found" });
+      App.findOneAndRemove({ _id: result[0]._id })
+        .exec()
+        .then(app => {
+          if (app.iOSCert)
+            fs.unlink(app.iOSCert, err => {
+              if (err)
+                console.log(err);
+            });
+          if (app.iOSKey)
+            fs.unlink(app.iOSKey, err => {
+              if (err)
+                console.log(err);
+            });
+          if (app.FCMjson)
+            fs.unlink(app.FCMjson, err => {
+              if (err)
+                console.log(err);
+            })
+          res.status(200).json({
+            app,
+            removed: true
+          })
+        })
     })
     .catch(err => {
       res.status(500).json({ err })
+    });
+});
+
+// update device+app combo
+router.put('/:appId/devices/:serialNumber', (req, res, next) => {
+  req.body.modifiedOn = Date.now();
+  Device.findOneAndUpdate({ appId: req.params.appId, serialNumber: req.params.serialNumber }, req.body, { new: true }, (err, result) => {
+    if (err)
+      res.json({ err });
+    res.json({ result });
+  });
+});
+
+// delete device+app combo
+router.delete('/:appId/devices/:serialNumber', (req, res, next) => {
+  Device.find({ appid: req.params.appId, serialNumber: req.params.serialNumber })
+    .exec()
+    .then(result => {
+      if (result.length < 1) {
+        res.status(404).json({
+          message: 'device not found'
+        });
+      } else {
+        Device.findOneAndRemove({ _id: result[0]._id })
+          .then(result => {
+            res.status(200).json({
+              result,
+              removed: true
+            });
+          })
+          .catch(err => {
+            res.status(500).json({ err })
+          });
+      }
     });
 });
 

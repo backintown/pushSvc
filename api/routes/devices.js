@@ -8,12 +8,12 @@ const App = require('../models/App');
 //get all devices
 //todo - add filter
 router.get('/', (req, res, next) => {
-  if (req.body.appId && req.body.accountId)
-    query = { appId: req.body.appId, accountId: req.body.accountId };
-  else if (req.body.appId)
-    query = { appId: req.body.appId };
-  else if (req.body.accountId)
-    query = { accountId: req.body.accountId };
+  if (req.query.appId && req.query.accountId)
+    query = { appId: req.query.appId, accountId: req.query.accountId };
+  else if (req.query.appId)
+    query = { appId: req.query.appId };
+  else if (req.query.accountId)
+    query = { accountId: req.query.accountId };
   else
     return res.status(400).json({ err: "No filter" });
 
@@ -82,38 +82,39 @@ router.post('/', (req, res, next) => {
 })
 
 
-router.put('/:serialNumber', (req, res, next) => {
-  req.body.modifiedOn = Date.now();
-  Device.findOneAndUpdate({ serialNumber: req.params.serialNumber }, req.body, (err, result) => {
-    if (err)
-      res.json({ err });
-    res.json({ result });
-  });
-});
+// router.put('/:appId/devices/:serialNumber', (req, res, next) => {
+//   req.body.modifiedOn = Date.now();
+//   Device.findOneAndUpdate({ serialNumber: req.params.serialNumber }, req.body, { new: true }, (err, result) => {
+//     if (err)
+//       res.json({ err });
+//     res.json({ result });
+//   });
+// });
 
 //delete device route
 //change to update status instead of delete
-router.delete('/:deviceId', (req, res, next) => {
-  Device.find()
-    .exec()
-    .then(result => {
-      if (result.length < 1) {
-        res.status(404).json({
-          message: 'device not found'
-        });
-      } else {
-        Device.remove({ deviceId: req.params.deviceId })
-          .then(result => {
-            res.status(200).json({
-              message: `${req.params.deviceId} removed`
-            });
-          })
-          .catch(err => {
-            res.status(500).json({ err })
-          });
-      }
-    });
-});
+// router.delete('/:appId/devices/:serialNumber', (req, res, next) => {
+//   Device.find({ appid: req.params.appId, serialNumber: req.params.serialNumber })
+//     .exec()
+//     .then(result => {
+//       if (result.length < 1) {
+//         res.status(404).json({
+//           message: 'device not found'
+//         });
+//       } else {
+//         Device.findOneAndRemove({ _id: result[0]._id })
+//           .then(result => {
+//             res.status(200).json({
+//               result,
+//               removed: true
+//             });
+//           })
+//           .catch(err => {
+//             res.status(500).json({ err })
+//           });
+//       }
+//     });
+// });
 
 //for sending notification to all devices
 async function subscribeToTopic(device, topic) {

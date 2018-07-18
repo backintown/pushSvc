@@ -13,7 +13,7 @@ const appSchema = mongoose.Schema({
   FCMProjectId: { type: String }, // for fcm project url
   iOSCert: { type: String }, // path to file in local storage
   iOSKey: { type: String },
-  status: { type: Number }, // {1, 0 - inactive}
+  status: { type: Number, default: 1 }, // {1, 0 - inactive}
   supportBy: { type: String },
   supportNumber: { type: String },
   supportEmail: { type: String },
@@ -22,7 +22,7 @@ const appSchema = mongoose.Schema({
   modifiedBy: { type: String },
   modifiedOn: { type: Date, default: Date.now }
 
-});
+}, { versionKey: false });
 // each appId should only have one iOS and one Android version
 appSchema.index({ appId: 1, osPlatform: 1 });
 module.exports = mongoose.model('App', appSchema);

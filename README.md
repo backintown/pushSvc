@@ -57,21 +57,27 @@ Send push notifications to Android and iOS apps using Firebase Cloud Messaging a
 
 - POST - register your app with database
 
-- PUT - update existing apps
+- PUT (/{appId}/{osPlatform})- update existing apps
 
-- DELETE (/:appId) - delete app (requires osPlatform)
+- DELETE (/{appId}/{osPlatform}) - delete app 
+
+- PUT (/{appId}/devices/{serialNumber}) - update app/device combo 
+
+- DELETE (/{appId}/devices/{serialNumber}) - delete app/device combo
 
 ### DEVICES - /apis/v1/pushService/devices
 
-- GET - returns devices in database, must include filters (accountId or appId or both) in request body (json)
+- GET - returns devices in database, must include filters (accountId or appId or both) in request query string e.g. ?appId=com.cht.test&osPlatform=Android
 
 - GET (/:serialNumber) - returns device
 
 - POST - register your device with database
 
-- PUT - update existing devices
+- update and delete your devices in the apps route*
 
-- DELETE (/:serialNumber) - delete device
+<!-- - PUT - update existing devices -->
+
+<!-- - DELETE (/:serialNumber) - delete device -->
  
 ### NOTIFICATIONS - /apis/v1/pushService/notification
 
@@ -115,10 +121,10 @@ I used Postman for testing. Feel free to use CURL or other methods.
 - Notifications
     - Scheduled delivery
 - Logs
-    - Include broadcast flag
-    - Create update route
+    - Include broadcast flag [x]
+    - Create update route [x]
 
 ### Deployment
 
 - Dockerize server
-- Deploy to AWS
+- Deploy to AWS [x]
