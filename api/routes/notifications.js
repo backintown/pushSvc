@@ -77,12 +77,16 @@ router.post('/app', (req, res, next) => {
             osPlatform: req.body.osPlatform
           }).then(trxId => {
             req.body.osPlatform === 'iOS' ?
-              APNS.send(req.body.notification, devices, appUID, trxId) :
-              FCM.sendTopic(req.body.notification, topic, appUID, trxId);
-            return res.status(200).json({ trxId }); // return trxId
-          });
+              APNS.send(req.body.notification, devices, appUID, trxId)
+                .then(_ => res.status(200).json({ trxId }))
+                .catch(err => res.status(500).json({ err })) :
+              FCM.sendTopic(req.body.notification, topic, appUID, trxId)
+                .then(_ => res.status(200).json({ trxId }))
+                .catch(err => res.status(500).json({ err }))
+
+          })
         })
-        .catch(err => { console.log(err) });
+        .catch(err => res.status(500).json({ err }));
     })
     .catch(err => { res.status(500).json({ err }) });
 });
@@ -93,7 +97,7 @@ router.post('/device', (req, res, next) => {
   if (!req.body.notification)
     return res.status(400).json({ err: "No notification" });
 
-  Device.find({ serialNumber: req.body.serialNumber })
+  Device.find({ serialNumber: req.body.serialNumber, appId: req.body.appId })
     .exec()
     .then(devices => {
       if (devices.length < 1) {
@@ -115,9 +119,12 @@ router.post('/device', (req, res, next) => {
             osPlatform: req.body.osPlatform
           }).then(trxId => {
             req.body.osPlatform === 'iOS' ?
-              APNS.send(req.body.notification, devices, appUID, trxId) :
-              FCM.send(req.body.notification, devices, appUID, trxId);
-            return res.status(200).json({ trxId }); // return trxId
+              APNS.send(req.body.notification, devices, appUID, trxId)
+                .then(_ => res.status(200).json({ trxId }))
+                .catch(err => res.status(500).json({ err })) :
+              FCM.send(req.body.notification, devices, appUID, trxId)
+                .then(_ => res.status(200).json({ trxId }))
+                .catch(err => res.status(500).json({ err }))
           });
         })
         .catch(err => { console.log(err) });

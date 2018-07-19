@@ -7,61 +7,67 @@ const { google } = require('googleapis');
 const sendTopic = async function (payload, topic, appUID, trx) {
   // setup
   // get app info
-
   const app = await App.findById(appUID)
     .then(app => app)
-    .catch(err => { console.log(err) });
+    .catch(err => res.status(500).json({ err }));
 
-  const authKey = await getAccessToken(app.FCMjson).then(token => token);
+  const authKey = await getAccessToken(app.FCMjson)
+    .then(token => token)
+    .catch(err => err);
 
-  const projectURL = `https://fcm.googleapis.com/v1/projects/${app.FCMProjectId}/messages:send`;
-
-  // configure notification
-
-  if (!payload.data)
-    payload.data = {};
-  const note = {
-    message: {
-      android: {
-        notification: {
-          title: payload.title,
-          body: payload.message,
-          click_action: "OPEN_ACTIVITY_1",
-          sound: "default"
-        }
-      },
-      topic: topic,
-      data: payload.data
-    }
-  };
-  const reqBody = {
-    body: JSON.stringify(note),
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + authKey
-    },
-    method: 'POST'
-  };
-  requestFCM(projectURL, reqBody, 5, 100)
-    .then(data => {
-      const log = new Log({
-        transactionId: trx,
-        sendFlag: true,
-        responseFlag: true,
-        status: 200,
-        result: data,
-      }).save().catch(err => console.log(err));
-    })
-    .catch(err => {
-      const log = new Log({
-        transactionId: trx,
-        sendFlag: false,
-        responseFlag: false,
-        status: err.status,
-        result: err.error,
-      }).save()
-
+  if (!authKey) {
+    return new Promise((resolve, reject) => {
+      reject("FCM json file not found. Please update app");
     });
+  }
+  return new Promise((resolve, reject) => {
+
+    const projectURL = `https://fcm.googleapis.com/v1/projects/${app.FCMProjectId}/messages:send`;
+
+    // configure notification
+
+    if (!payload.data)
+      payload.data = {};
+    const note = {
+      message: {
+        android: {
+          notification: {
+            title: payload.title,
+            body: payload.message,
+            click_action: "OPEN_ACTIVITY_1",
+            sound: "default"
+          }
+        },
+        topic: topic,
+        data: payload.data
+      }
+    };
+    const reqBody = {
+      body: JSON.stringify(note),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + authKey
+      },
+      method: 'POST'
+    };
+    requestFCM(projectURL, reqBody, 5, 100)
+      .then(data => {
+        const log = new Log({
+          transactionId: trx,
+          sendFlag: true,
+          status: 200,
+          result: data,
+        }).save().then(log => resolve(log)).catch(err => reject(err));
+      })
+      .catch(err => {
+        const log = new Log({
+          transactionId: trx,
+          sendFlag: false,
+          status: err.status,
+          result: err.error,
+        }).save().then(log => resolve(log)).catch(err => reject(err))
+      });
+  })
 }
 
 const send = async function (payload, devices, appUID, trx) {
@@ -71,6 +77,12 @@ const send = async function (payload, devices, appUID, trx) {
     .catch(err => { console.log(err) });
 
   const authKey = await getAccessToken(app.FCMjson).then(token => token);
+
+  if (!authKey) {
+    return new Promise((resolve, reject) => {
+      reject("FCM json file not found. Please update app");
+    });
+  }
 
   const projectURL = `https://fcm.googleapis.com/v1/projects/${app.FCMProjectId}/messages:send`;
   // construct notification payload
@@ -128,9 +140,17 @@ const send = async function (payload, devices, appUID, trx) {
 }
 
 function getAccessToken(json) {
-  const key = require(`../../${json}`);
+
   const SCOPES = ['https://www.googleapis.com/auth/firebase.messaging']
   return new Promise(function (resolve, reject) {
+    let key;
+    try {
+      key = require(`../../${json}`);
+    } catch (e) {
+      reject(false);
+      return;
+    }
+
     var jwtClient = new google.auth.JWT(
       key.client_email,
       null,
