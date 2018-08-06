@@ -114,8 +114,8 @@ router.post('/', upload.fields([{ name: 'iOSCert', maxCount: 1 }, { name: 'iOSKe
 });
 
 //update
-router.put('/:appId/:osPlatform', upload.fields([{ name: 'iOSCert', maxCount: 1 }, { name: 'iOSKey', maxCount: 1 }, { name: 'FCMjson', maxCount: 1 }]), (req, res, next) => {
-  App.find({ appId: req.params.appId, osPlatform: req.params.osPlatform })
+router.put('/:appId', upload.fields([{ name: 'iOSCert', maxCount: 1 }, { name: 'iOSKey', maxCount: 1 }, { name: 'FCMjson', maxCount: 1 }]), (req, res, next) => {
+  App.find({ appId: req.params.appId, osPlatform: req.query.osPlatform })
     .then(result => {
       if (result.length < 1) {
         return res.status(404).json({ err: "app not found" });
@@ -156,8 +156,8 @@ router.put('/:appId/:osPlatform', upload.fields([{ name: 'iOSCert', maxCount: 1 
 
 //delete app route
 //change to update status instead of delete
-router.delete('/:appId/:osPlatform', (req, res, next) => {
-  App.find({ appId: req.params.appId, osPlatform: req.params.osPlatform })
+router.delete('/:appId', (req, res, next) => {
+  App.find({ appId: req.params.appId, osPlatform: req.query.osPlatform })
     .exec()
     .then(result => {
       if (result.length < 1)
@@ -191,7 +191,30 @@ router.delete('/:appId/:osPlatform', (req, res, next) => {
     });
 });
 
+
+/****
+ * app + device combo routes
+ ****/
+
 // update device+app combo
+
+router.get('/:appId/devices', (req, res, next) => {
+  Device.find({ appId: req.params.appId, osPlatform: req.query.osPlatform })
+    .exec()
+    .then(result => {
+      if (result.length < 1) {
+        res.status(404).json({
+          err: 'no device found'
+        });
+      } else {
+        let devices = result.map(device => {
+          return device;
+        })
+        return res.json({ devices });
+      }
+    })
+})
+
 router.put('/:appId/devices/:serialNumber', (req, res, next) => {
   req.body.modifiedOn = Date.now();
   Device.findOneAndUpdate({ appId: req.params.appId, serialNumber: req.params.serialNumber }, req.body, { new: true }, (err, result) => {
@@ -208,7 +231,7 @@ router.delete('/:appId/devices/:serialNumber', (req, res, next) => {
     .then(result => {
       if (result.length < 1) {
         res.status(404).json({
-          message: 'device not found'
+          err: 'device not found'
         });
       } else {
         Device.findOneAndRemove({ _id: result[0]._id })
