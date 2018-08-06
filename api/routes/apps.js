@@ -115,6 +115,7 @@ router.post('/', upload.fields([{ name: 'iOSCert', maxCount: 1 }, { name: 'iOSKe
 
 //update
 router.put('/:appId', upload.fields([{ name: 'iOSCert', maxCount: 1 }, { name: 'iOSKey', maxCount: 1 }, { name: 'FCMjson', maxCount: 1 }]), (req, res, next) => {
+  console.log('hello')
   App.find({ appId: req.params.appId, osPlatform: req.query.osPlatform })
     .then(result => {
       if (result.length < 1) {
@@ -122,10 +123,10 @@ router.put('/:appId', upload.fields([{ name: 'iOSCert', maxCount: 1 }, { name: '
       } else {
         // move files and set updated paths in req.body
         [req.body.iOSCert, req.body.iOSKey, req.body.FCMjson] = moveFiles(req.files);
-
+        console.log(req.body)
         req.body.status = null; // status should not be updated externally
         req.body.modifiedOn = Date.now(); // insert date into request object for modifiedOn
-        App.findOneAndUpdate({ appId: req.params.appId, osPlatform: req.params.osPlatform }, req.body, { new: true }, (err, result) => {
+        App.findOneAndUpdate({ appId: req.params.appId, osPlatform: req.query.osPlatform }, req.body, (err, result) => {
           // result is the original record
           // remove old files
           console.log(result)
