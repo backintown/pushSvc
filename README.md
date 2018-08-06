@@ -59,11 +59,14 @@ Send push notifications to Android and iOS apps using Firebase Cloud Messaging a
 
 - PUT (/{appId}/{osPlatform})- update existing apps
 
-- DELETE (/{appId}/{osPlatform}) - delete app 
+- DELETE (/{appId}?osPlatform='') - delete app 
 
 - PUT (/{appId}/devices/{serialNumber}) - update app/device combo 
 
 - DELETE (/{appId}/devices/{serialNumber}) - delete app/device combo
+
+- GET (/{appId}/devices?osPlatform='') - get list of devices for app
+
 
 ### DEVICES - /apis/v1/pushService/devices
 
