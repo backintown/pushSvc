@@ -57,7 +57,7 @@ Send push notifications to Android and iOS apps using Firebase Cloud Messaging a
 
 - POST - register your app with database
 
-- PUT (/{appId}/{osPlatform})- update existing apps
+- PUT (/{appId}/?osPlatform='') - update existing apps
 
 - DELETE (/{appId}?osPlatform='') - delete app 
 

@@ -45,6 +45,32 @@ router.get('/', (req, res, next) => {
     .catch(err => console.log(err));
 });
 
+router.get('/:appId', (req, res, next) => {
+  App.find({ appId: req.params.appId, osPlatform: req.query.osPlatform })
+    .select('-__v')
+    .exec()
+    .then(results => {
+      if (results.length < 1) res.status(404).json({ err: "app not found" });
+      res.status(200).json({
+        apps: results.map(result => {
+          result = result.toObject();
+          if (result.osPlatform === 'iOS') {
+            delete result.FCMjson;
+            delete result.FCMServerKey;
+            delete result.FCMProjectId;
+          } else {
+            delete result.iOSKey;
+            delete result.iOSCert;
+          }
+          return result
+        })
+      });
+    })
+    .catch(err => {
+      console.log(err);
+    });
+});
+
 //POST route
 router.post('/', upload.fields([{ name: 'iOSCert', maxCount: 1 }, { name: 'iOSKey', maxCount: 1 }, { name: 'FCMjson', maxCount: 1 }]), (req, res, next) => {
   console.log("file", req.file)
@@ -108,7 +134,7 @@ router.post('/', upload.fields([{ name: 'iOSCert', maxCount: 1 }, { name: 'iOSKe
     })
     .catch(err => {
       console.log(err)
-      res.status(500).json({ err })
+      res.status(500).json({ err: 'no payload' })
     });
 
 });
@@ -215,6 +241,23 @@ router.get('/:appId/devices', (req, res, next) => {
       }
     })
 })
+
+router.get('/:appId/devices/:serialNumber', (req, res, next) => {
+  Devince.find({ appId: req.params.appId, serialNumber: req.params.serialNumber })
+    .select('-__v')
+    .exec()
+    .then(results => {
+      if (results.length < 1) {
+        res.status(404).json({ err: "device not found" });
+      }
+      res.status(200).json({
+        device: results[0]
+      });
+    })
+    .catch(err => {
+      res.json({ err });
+    })
+});
 
 router.put('/:appId/devices/:serialNumber', (req, res, next) => {
   req.body.modifiedOn = Date.now();
