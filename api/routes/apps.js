@@ -230,33 +230,71 @@ router.get('/:appId/devices', (req, res, next) => {
     .exec()
     .then(result => {
       if (result.length < 1) {
-        res.status(404).json({
-          err: 'no device found'
-        });
-      } else {
-        let devices = result.map(device => {
-          return device;
-        })
-        return res.json({ devices });
+        return res.status(404).json({ err: 'no device found' });
       }
+      let devices = result.map(device => {
+        return device;
+      })
+      res.status(200).json({ devices });
     })
 })
 
 router.get('/:appId/devices/:serialNumber', (req, res, next) => {
-  Devince.find({ appId: req.params.appId, serialNumber: req.params.serialNumber })
+  if (!req.query.osPlatform) return res.status(400).json({ err: 'no os specified' });
+  Device.find({ appId: req.params.appId, serialNumber: req.params.serialNumber, osPlatform: req.query.osPlatform })
     .select('-__v')
     .exec()
     .then(results => {
       if (results.length < 1) {
-        res.status(404).json({ err: "device not found" });
+        return res.status(404).json({ err: "device not found" });
       }
       res.status(200).json({
         device: results[0]
       });
     })
     .catch(err => {
-      res.json({ err });
+      console.log(err);
     })
+});
+
+router.post('/:appId/devices/', (req, res, next) => {
+  if (Object.keys(req.body).length === 0) return res.status(400).json({ err: 'no payload' });
+  Device.find({ appId: req.body.appId, pushId: req.body.pushId })
+    .exec()
+    .then(result => {
+      if (result.length > 0) {
+        return res.status(409).json({
+          message: 'device exists'
+        });
+      } else {
+        const device = new Device({
+          serialNumber: req.body.serialNumber,
+          accountId: req.body.accountId,
+          osPlatform: req.body.osPlatform,
+          osVersion: req.body.osVersion,
+          appVersion: req.body.appVersion,
+          appId: req.body.appId,
+          pushId: req.body.pushId
+        });
+        subscribeToTopic(device, device.appId)
+          .then(result => {
+            device.save()
+              .then(result => {
+                res.status(201).json({
+                  message: 'device saved',
+                  result
+                });
+              })
+              .catch(err => { res.status(500).json({ err }) });
+          })
+          .catch(err => {
+            res.status(400).json({ err });
+          })
+      }
+    })
+    .catch(err => {
+      res.status(500).json({ err })
+    });
 });
 
 router.put('/:appId/devices/:serialNumber', (req, res, next) => {
@@ -270,9 +308,10 @@ router.put('/:appId/devices/:serialNumber', (req, res, next) => {
 
 // delete device+app combo
 router.delete('/:appId/devices/:serialNumber', (req, res, next) => {
-  Device.find({ appid: req.params.appId, serialNumber: req.params.serialNumber })
+  Device.find({ appId: req.params.appId, serialNumber: req.params.serialNumber, osPlatform: req.query.osPlatform })
     .exec()
     .then(result => {
+      console.log(result);
       if (result.length < 1) {
         res.status(404).json({
           err: 'device not found'
@@ -322,5 +361,34 @@ function moveFiles(files) {
     });
   }
   return [certPath, keyPath, fcmPath];
+}
+
+
+async function subscribeToTopic(device, topic) {
+  // set app info
+  return new Promise((resolve, reject) => {
+    const url = `https://iid.googleapis.com/iid/v1/${device.pushId}/rel/topics/${topic}`;
+
+    App.find({ appId: device.appId, osPlatform: device.osPlatform })
+      .exec()
+      .then(result => {
+        const serverKey = result[0].FCMServerKey;
+        fetch(url, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `key=${serverKey}`
+          },
+          method: 'POST'
+        })
+          .then(response => {
+            if (response.status === 400) {
+              reject('Invalid FCM token');
+            }
+            resolve(response);
+          })
+          .catch(err => console.log(err));
+      })
+      .catch(err => { console.log(err) });
+  })
 }
 module.exports = router;

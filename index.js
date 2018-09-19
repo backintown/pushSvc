@@ -8,7 +8,7 @@ const { google } = require('googleapis');
 const appsRoutes = require('./api/routes/apps');
 const devicesRoutes = require('./api/routes/devices');
 const notificationRoutes = require('./api/routes/notifications');
-
+console.log(process.env.MONGO_PW)
 mongoose.connect(`mongodb+srv://user1:${process.env.MONGO_PW}@pushservertest-mwuwk.mongodb.net/test?retryWrites=true`);
 
 app.use(bodyParser.urlencoded({ extended: false }));
